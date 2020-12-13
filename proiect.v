@@ -38,7 +38,7 @@ Inductive Results :=
 Scheme Equality for Results.
 
 Inductive AExp :=
-| aint : Z -> AExp
+| aint : ErrorInt -> AExp
 | avar : string -> AExp
 | arrayVal : string -> nat -> AExp
 | aplus : AExp -> AExp -> AExp
@@ -50,7 +50,7 @@ Inductive AExp :=
 | amin : AExp -> AExp -> AExp
 | apow : AExp -> AExp -> AExp.
 
-Coercion aint : Z >-> AExp.
+Coercion aint : ErrorInt >-> AExp.
 Coercion avar : string >-> AExp.
 
 Inductive BExp :=
@@ -111,12 +111,12 @@ Check min(1, 2).
 Check max(3, 5).
 Check pow(2, 10).
 
-Notation "! A" := (bnot A) (at level 54).
-Notation "A ==' B" := (beq A B) (at level 53).
-Notation "A <' B" := (blt A B) (at level 53).
-Notation "A <=' B" := (ble A B) (at level 53).
-Notation "A >' B" := (bgt A B) (at level 53).
-Notation "A >=' B" := (bge A B) (at level 53).
+Notation "! A" := (bnot A) (at level 50).
+Notation "A ==' B" := (beq A B) (at level 55).
+Notation "A <' B" := (blt A B) (at level 55).
+Notation "A <=' B" := (ble A B) (at level 55).
+Notation "A >' B" := (bgt A B) (at level 55).
+Notation "A >=' B" := (bge A B) (at level 55).
 
 Check !btrue.
 Check 1 ==' 1.
@@ -125,8 +125,8 @@ Check 0 <=' 2.
 Check 1 >' 0.
 Check 2 >=' 2.
 
-Notation "A '&&'' B" := (band A B) (at level 55).
-Notation "A '||'' B" := (bor A B) (at level 55).
+Notation "A '&&'' B" := (band A B) (at level 54).
+Notation "A '||'' B" := (bor A B) (at level 54).
 
 Check btrue &&' bfalse.
 Check btrue ||' bfalse.
@@ -140,9 +140,9 @@ Notation "'array' A '['' B '']'" := (adecarray A B) (at level 50).
 Notation "X '#' i ::=a A" := (assignment_array X i A) (at level 50).
 Notation "X ::=n A" := (assignment_int X A) (at level 50).
 Notation "X ::=b A" := (assignment_bool X A) (at level 50).
-Notation "S1 ;; S2" := (sequence S1 S2) (at level 90).
-Notation "'Iff' A 'Then' B" := (ifthen A B) (at level 90).
-Notation "'If' A 'Then' B 'Else' C" := (ifthenelse A B C) (at level 90).
+Notation "S1 ;; S2" := (sequence S1 S2) (at level 60).
+Notation "'Iff' A 'Then' B" := (ifthen A B) (at level 70).
+Notation "'If' A 'Then' B 'Else' C" := (ifthenelse A B C) (at level 70).
 Notation "'While' '(' A ')' '(' B ')'" := (whilethisdothat A B) (at level 90).
 Notation "'For' '(' A ; B ; C ')' '(' D ')'" := (forthisdothat A B C D) (at level 90).
 Notation "A :' B" := (label A B) (at level 90).
@@ -210,19 +210,19 @@ end.
 Definition env : Env := fun n => err_undecl.
 
 (* update *)
-Definition update (env : Env) (v : string) (val : Results) : Env :=
-  fun v' => if (eqb v v')
+Definition update (env : Env) (x : string) (v : Results) : Env :=
+  fun y => if (eqb y x)
             then
-              if (andb (CheckType (err_undecl) (env v')) (negb(CheckType (default) (val))))
+              if (andb (CheckType err_undecl (env y)) (negb(CheckType default v)))
               then err_undecl
               else
-                if (andb (CheckType (err_undecl) (env v')) (CheckType (default) (val)))
+                if (andb (CheckType err_undecl (env y)) (CheckType default v))
                 then default
                 else
-                  if (orb (CheckType (default) (env v')) (CheckType (val) (env v')))
-                  then val
+                  if (orb (CheckType default (env y)) (CheckType v (env y)))
+                  then v
                   else err_assign
-            else env v'.
+            else (env y).
 
 Compute (env "x").
 Compute (update (update env "x" (default)) "x" (rbool true) "x").
@@ -384,26 +384,26 @@ Inductive beval : BExp -> Env -> ErrorBool -> Prop :=
     a1 =[ sigma ]=> i1 ->
     a2 =[ sigma ]=> i2 ->
     b = lt_err i1 i2 ->
-    a1 <' a2 ={ sigma }=> b
+    (a1 <' a2) ={ sigma }=> b
 | e_lessequalthan : forall a1 a2 i1 i2 sigma b,
     a1 =[ sigma ]=> i1 ->
     a2 =[ sigma ]=> i2 ->
     b = le_err i1 i2 ->
-    a1 <=' a2 ={ sigma }=> b
+    (a1 <=' a2) ={ sigma }=> b
 | e_greaterthan : forall a1 a2 i1 i2 sigma b,
     a1 =[ sigma ]=> i1 ->
     a2 =[ sigma ]=> i2 ->
     b = gt_err i1 i2 ->
-    a1 >' a2 ={ sigma }=> b
+    (a1 >' a2) ={ sigma }=> b
 | e_greaterequalthan : forall a1 a2 i1 i2 sigma b,
     a1 =[ sigma ]=> i1 ->
     a2 =[ sigma ]=> i2 ->
     b = ge_err i1 i2 ->
-    a1 >=' a2 ={ sigma }=> b
+    (a1 >=' a2) ={ sigma }=> b
 | e_not : forall a1 i1 sigma b,
     a1 ={ sigma }=> i1 ->
     b = (not_err i1) ->
-    ! a1 ={ sigma }=> b
+    (! a1) ={ sigma }=> b
 | e_and : forall a1 a2 i1 i2 sigma b,
     a1 ={ sigma }=> i1 ->
     a2 ={ sigma }=> i2 ->
@@ -419,12 +419,13 @@ where "B ={ S }=> B'" := (beval B S B').
 Reserved Notation "S -{ sigma }-> Sigma'" (at level 60).
 Inductive eval : Stmt -> Env -> Env -> Prop :=
 | e_int_decl_null : forall x sigma sigma',
-  sigma' = (update sigma x (rint 0)) ->
+  sigma' = (update sigma x (default)) ->
   (int* x) -{ sigma }-> sigma'
-| e_int_decl : forall a i x sigma sigma',
+| e_int_decl : forall a i x sigma sigma' sigma_final,
   a =[ sigma ]=> i ->
-  sigma' = (update sigma x (rint i)) ->
-  (int x =' a) -{ sigma }-> sigma'
+  sigma' = (update sigma x default) ->
+  sigma_final = (update sigma' x (rint i)) ->
+  (int x =' a) -{ sigma }-> sigma_final
 | e_int_assign : forall a i x sigma sigma',
   a =[ sigma ]=> i ->
   sigma' = (update sigma x (rint i)) ->
@@ -442,8 +443,16 @@ Inductive eval : Stmt -> Env -> Env -> Prop :=
   (x ::=b a) -{ sigma }-> sigma'
 | e_seq : forall s1 s2 sigma sigma1 sigma2,
   s1 -{ sigma }-> sigma1 ->
-  s2 -{ sigma }-> sigma2 ->
+  s2 -{ sigma1 }-> sigma2 ->
   (s1 ;; s2) -{ sigma }-> sigma2
+| e_break1 : forall s1 s2 sigma,
+  s1 -{ sigma }-> sigma ->
+  s2 -{ sigma }-> sigma ->
+  (s1 ;; s2) -{ sigma }-> sigma
+| e_break2 : forall s1 s2 sigma sigma1,
+  s1 -{ sigma }-> sigma1 ->
+  s2 -{ sigma1 }-> sigma1 ->
+  (s1 ;; s2) -{ sigma }-> sigma1
 | e_ifthen_false : forall b s1 sigma,
     b ={ sigma }=> false ->
     (Iff b Then s1) -{ sigma }-> sigma
@@ -473,7 +482,41 @@ Inductive eval : Stmt -> Env -> Env -> Prop :=
     e2 ={ sigma }=> true ->
     (e1 ;; whilethisdothat e2 (s ;; e3)) -{ sigma }-> sigma' ->
     forthisdothat e1 e2 e3 s -{ sigma }-> sigma'
+| e_break : forall stmt sigma,
+    stmt -{ sigma }-> sigma
 where "S -{ sigma }-> Sigma'" := (eval S sigma Sigma').
+
+Hint Constructors aeval.
+Hint Constructors beval.
+Hint Constructors eval.
+
+Example ex1 :
+  exists sigma',
+  (
+    int "i" =' 0;;
+    While ("i" <=' 10)
+    (
+      "i" ::=n ("i" +' 1);;
+      break;;
+      "i" ::=n ("i" +' 1)
+    )
+  )-{ env }-> sigma' /\ sigma' "i" = rint 1.
+Proof.
+  eexists.
+  split.
+  - eapply e_seq.
+    + eapply e_int_decl; eauto.
+    + eapply e_whiletrue.
+      * eapply e_lessequalthan; eauto.
+      * eapply e_seq.
+        ++ eapply e_seq.
+          +++ eapply e_break2.
+            ++++ eapply e_int_assign; eauto.
+            ++++ eapply e_break.
+          +++ eapply e_int_assign; eauto.
+        ++ eapply e_whiletrue; eauto.
+  - unfold update. simpl. reflexivity.
+Qed.
 
 
 
