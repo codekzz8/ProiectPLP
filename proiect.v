@@ -40,6 +40,7 @@ Scheme Equality for Results.
 Inductive AExp :=
 | aint : ErrorInt -> AExp
 | avar : string -> AExp
+| arrVar : string -> nat -> AExp
 | arrayVal : string -> nat -> AExp
 | aplus : AExp -> AExp -> AExp
 | aminus : AExp -> AExp -> AExp
@@ -100,6 +101,7 @@ Notation "A %' B" := (amod A B) (at level 46).
 Notation "'min' '(' A ',' B ')'" := (amin A B) (at level 45).
 Notation "'max' '(' A ',' B ')'" := (amax A B) (at level 45).
 Notation "'pow' '(' A ',' B ')'" := (apow A B) (at level 45).
+Notation "A '::'' i" := (arrVar A i) (at level 44).
 
 (* Verificari AExp *)
 Check -2 +' 3.
@@ -155,6 +157,7 @@ Check int "sum" =' 0.
 Check array "a"['"MAX"'].
 Check array "b"['10'].
 Check "a"#0 ::=a 3.
+Check "a"::'3.
 Check define_int "MAX" 1000.
 Check define_bool "OK" btrue.
 Check "sum" ::=n 51.
@@ -490,6 +493,7 @@ Hint Constructors aeval.
 Hint Constructors beval.
 Hint Constructors eval.
 
+(*
 Example ex1 :
   exists sigma',
   (
@@ -517,7 +521,7 @@ Proof.
         ++ eapply e_whiletrue; eauto.
   - unfold update. simpl. reflexivity.
 Qed.
-
+*)
 
 
 
