@@ -11,8 +11,6 @@ Local Open Scope list_scope.
 Scheme Equality for list.
 Import ListNotations.
 
-Compute nth 0 [1; 2].
-
 Require Export BinNums.
 Require Import BinPos BinNat.
 Local Open Scope Z_scope.
@@ -40,7 +38,6 @@ Scheme Equality for Results.
 Inductive AExp :=
 | aint : ErrorInt -> AExp
 | avar : string -> AExp
-| arrVar : string -> nat -> AExp
 | arrayVal : string -> nat -> AExp
 | aplus : AExp -> AExp -> AExp
 | aminus : AExp -> AExp -> AExp
@@ -70,15 +67,16 @@ Inductive BExp :=
 
 Coercion bvar : string >-> BExp.
 
+Definition arr_list := list Z.
 Inductive Stmt :=
 | assignment_int : string -> AExp -> Stmt
-| assignment_array : string -> nat -> AExp -> Stmt
+| assignment_array : string -> Z -> AExp -> arr_list -> Stmt
 | assignment_bool : string -> BExp -> Stmt
 | adecboolnull : string -> Stmt
 | adecbool : string -> BExp -> Stmt
 | adecintnull : string -> Stmt
 | adecint : string -> AExp -> Stmt
-| adecarray : string -> AExp -> Stmt
+| adecarray : string -> AExp -> arr_list -> Stmt
 | sequence : Stmt -> Stmt -> Stmt
 | ifthen : BExp -> Stmt -> Stmt
 | ifthenelse : BExp -> Stmt -> Stmt -> Stmt
@@ -88,7 +86,7 @@ Inductive Stmt :=
 | continue : Stmt
 | define_int : string -> AExp -> Stmt
 | define_bool : string -> BExp -> Stmt
-| case_list : Z -> Stmt -> Stmt  (* int -> sequence -> Stmt *)
+| case : Z -> Stmt -> Stmt  (* int -> sequence -> Stmt *)
 | switch : AExp -> Stmt -> Stmt (* AExp -> case_list -> Stmt *)
 | label : string -> Stmt -> Stmt
 | goto : string -> Stmt.
@@ -101,7 +99,7 @@ Notation "A %' B" := (amod A B) (at level 46).
 Notation "'min' '(' A ',' B ')'" := (amin A B) (at level 45).
 Notation "'max' '(' A ',' B ')'" := (amax A B) (at level 45).
 Notation "'pow' '(' A ',' B ')'" := (apow A B) (at level 45).
-Notation "A '::'' i" := (arrVar A i) (at level 44).
+Notation "A '::'' i" := (arrayVal A i) (at level 44).
 
 (* Verificari AExp *)
 Check -2 +' 3.
@@ -138,7 +136,7 @@ Notation "'int*' A" := (adecintnull A) (at level 50).
 Notation "'int' A =' B" := (adecint A B) (at level 50).
 Notation "'boolean*' A" := (adecboolnull A) (at level 56).
 Notation "'boolean' A =' B" := (adecbool A B) (at level 56).
-Notation "'array' A '['' B '']'" := (adecarray A B) (at level 50).
+Notation "'array' A '['' B '']' L" := (adecarray A B L) (at level 50).
 Notation "X '#' i ::=a A" := (assignment_array X i A) (at level 50).
 Notation "X ::=n A" := (assignment_int X A) (at level 50).
 Notation "X ::=b A" := (assignment_bool X A) (at level 50).
@@ -154,8 +152,8 @@ Check boolean "ok" =' bfalse.
 
 Check int* "sum".
 Check int "sum" =' 0.
-Check array "a"['"MAX"'].
-Check array "b"['10'].
+Check array "a"['"MAX"'] [].
+Check array "b"['10'] [].
 Check "a"#0 ::=a 3.
 Check "a"::'3.
 Check define_int "MAX" 1000.
@@ -338,6 +336,10 @@ match n1, n2 with
 | bbool v1, bbool v2 => bbool (orb v1 v2)
 end.
 Check or_err true false.
+
+(*-----------------------------------------------------------*)
+(*                       SEMANTICA                           *)
+(*-----------------------------------------------------------*)
 
 Reserved Notation "A =[ S ]=> N" (at level 65).
 Inductive aeval : AExp -> Env -> ErrorInt -> Prop :=
