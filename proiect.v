@@ -15,6 +15,10 @@ Require Export BinNums.
 Require Import BinPos BinNat.
 Local Open Scope Z_scope.
 
+(*-----------------------------------------------------------*)
+(*                         SINTAXA                           *)
+(*-----------------------------------------------------------*)
+
 Inductive ErrorInt :=
 | err_int : ErrorInt
 | num : Z -> ErrorInt.
