@@ -98,7 +98,8 @@ Inductive Stmt :=
 | define_bool : string -> BExp -> Stmt
 | switch : AExp -> list (AExp * Stmt) -> Stmt
 | label : string -> Stmt -> Stmt
-| goto : string -> Stmt.
+| goto : string -> Stmt
+| empty : Stmt.
 
 (* Notatii pentru expresii aritmetice *)
 Notation "A +' B" := (aplus A B) (at level 50).
@@ -493,8 +494,6 @@ Inductive eval : Stmt -> Env -> Env -> Prop :=
   s2 -{ sigma1 }-> sigma2 ->
   (s1 ;; s2) -{ sigma }-> sigma2
 | e_break1 : forall s1 s2 sigma,
-  s1 -{ sigma }-> sigma ->
-  s2 -{ sigma }-> sigma ->
   (s1 ;; s2) -{ sigma }-> sigma
 | e_break2 : forall s1 s2 sigma sigma1,
   s1 -{ sigma }-> sigma1 ->
@@ -531,13 +530,49 @@ Inductive eval : Stmt -> Env -> Env -> Prop :=
     forthisdothat e1 e2 e3 s -{ sigma }-> sigma'
 | e_break : forall stmt sigma,
     stmt -{ sigma }-> sigma
+| e_breaktest : forall stmt sigma,
+    stmt -{ sigma }-> match stmt with
+                      | whilethisdothat b s => sigma
+                      | forthisdothat e1 e2 e3 s => sigma
+                      | _ => sigma
+                      end
+| e_switch : forall exp lst sigma i j sigma1,
+    exp =[ sigma ]=> i ->
+    forall pair,
+      fst(pair) =[ sigma ]=> j ->
+      (i ==' j) ={ sigma }=> true ->
+      snd(pair) -{ sigma }-> sigma1 ->
+      (switch exp lst) -{ sigma }-> sigma1 
 where "S -{ sigma }-> Sigma'" := (eval S sigma Sigma').
 
 Hint Constructors aeval.
 Hint Constructors beval.
 Hint Constructors eval.
 
-(*
+Compute hd 3 [1; 2; 3].
+Compute hd ((0, "x" ::=n 3)) [(1, "x" ::=n 3); (2, "x" ::=n 5)].
+
+(*Example switchtest :
+  exists sigma',
+  (
+    int "i" =' 5;;
+    Switch("i")
+    [
+      (case_int 2, "i" ::=n 10);
+      (case_int 5, "i" ::=n 100)
+    ]
+  )-{ env }-> sigma' /\ sigma' "i" = rint 5.
+Proof.
+  eexists.
+  split.
+  - eapply e_seq.
+    + eapply e_int_decl; eauto.
+    + eapply e_switch.
+      ++ eapply var.
+      ++ eapply const.
+      ++ simpl.
+*)
+
 Example ex1 :
   exists sigma',
   (
@@ -557,15 +592,16 @@ Proof.
     + eapply e_whiletrue.
       * eapply e_lessequalthan; eauto.
       * eapply e_seq.
-        ++ eapply e_seq.
-          +++ eapply e_break2.
-            ++++ eapply e_int_assign; eauto.
-            ++++ eapply e_break.
-          +++ eapply e_int_assign; eauto.
-        ++ eapply e_whiletrue; eauto.
+        ** eapply e_seq.
+          *** eapply e_break2.
+            **** eapply e_int_assign; eauto.
+            **** eapply e_break.
+          *** eapply e_int_assign; eauto.
+        ** eapply e_whilefalse; eauto.
+          *** eapply e_lessequalthan; eauto. simpl.
   - unfold update. simpl. reflexivity.
 Qed.
-*)
+
 
 
 
