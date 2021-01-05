@@ -552,6 +552,14 @@ Hint Constructors eval.
 Compute hd 3 [1; 2; 3].
 Compute hd ((0, "x" ::=n 3)) [(1, "x" ::=n 3); (2, "x" ::=n 5)].
 
+Definition exemplu :=
+    int "i" =' 5;;
+    Switch("i")
+    [
+      (case_int 2, "i" ::=n 10);
+      (case_int 5, "i" ::=n 100)
+    ].
+
 (*Example switchtest :
   exists sigma',
   (
