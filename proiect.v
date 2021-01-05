@@ -553,11 +553,38 @@ Compute hd 3 [1; 2; 3].
 Compute hd ((0, "x" ::=n 3)) [(1, "x" ::=n 3); (2, "x" ::=n 5)].
 
 Definition exemplu :=
-    int "i" =' 5;;
+    define_int "MAX" 100;;
+    define_bool "ok" btrue;;
+
+    int* "a";;
+    int "b" =' 10;;
+    int* "i";;
+    boolean "nice" =' bfalse;;
+
+    If ("b" <=' 10)
+    Then "a" ::=n 5
+    Else "a" ::=n 6;;
+
+    array "v"['"MAX"'] [];;
+
+    While ("a" >=' 0)
+    (
+      "b" ::=n ("b" +' 1);;
+      "a" ::=n ("a" -' 1)
+    );;
+
+    int "sum" =' 2000;;
+    For ("i" ::=n 1; "i" <=' 7; "i" ::=n ("i" +' 1))
+    (
+      "sum" ::=n ("sum" /' "i");;
+      Iff ("i" ==' 6)
+      Then break
+    );;
+
     Switch("i")
     [
-      (case_int 2, "i" ::=n 10);
-      (case_int 5, "i" ::=n 100)
+      (case_int 6, "i" ::=n 10;; break);
+      (case_int 5, "i" ::=n 100;; break)
     ].
 
 (*Example switchtest :
